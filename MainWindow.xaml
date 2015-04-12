@@ -1,0 +1,30 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Nukepayload2.UnityEditor" 
+        xmlns:RedAlertAttackControls="clr-namespace:Nukepayload2.RedAlertAttackControls;assembly=RedAlertAttackControls" x:Class="MainWindow"
+        mc:Ignorable="d" UseLayoutRounding="True" 
+        Title="Unity3D_AssetBundle_解包器" Height="600" Width="800" AllowDrop="True">
+    <TabControl>
+        <TabItem  Header="分析">
+            <Grid>
+                <ListView x:Name="LstInfo">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="名称"  DisplayMemberBinding="{Binding Key}"/>
+                            <GridViewColumn Header="值" DisplayMemberBinding="{Binding Value}"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Grid>
+        </TabItem>
+        <TabItem  Header="解包">
+            <Grid>
+                <RedAlertAttackControls:w8btn BorderBrush="Black" BackBrush="Cyan" BorderThickness="2" Text="保存对象数据..." Width="150" Height="40" HorizontalAlignment="Left" VerticalAlignment="Top"  Margin="10,10,0,0" PreviewMouseLeftButtonUp="w8btn_PreviewMouseLeftButtonUp"  />
+                <TextBlock x:Name="TxtStatus" HorizontalAlignment="Left" Margin="176,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
+            </Grid>
+        </TabItem> 
+    </TabControl>
+</Window>
