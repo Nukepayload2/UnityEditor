@@ -20,7 +20,7 @@ bld/
 [Oo]bj/
 
 # User reference cache
-.RefAsm/
+RefAsm/
 
 # Roslyn cache directories
 *.ide/
