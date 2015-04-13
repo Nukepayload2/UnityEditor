@@ -289,7 +289,7 @@ Class TypeTree
                                      End If
                                      indent -= InP
                                      tpinf.Append(Space(indent)).AppendLine("End Sub")
-                                     tpinf.Append(Space(indent)).AppendLine("Sub Serialize(Strm As String)")
+                                     tpinf.Append(Space(indent)).AppendLine("Sub Serialize(Strm As Stream)")
                                      indent += InP
                                      If MayUseCall Then
                                          If NeedWith Then
