@@ -1,6 +1,8 @@
 ﻿Option Strict On
 Imports System.Reflection
 Imports System.Text
+Imports Nukepayload2.UnityEditor.AssetBundleFile.Asset.AssetMeta.TypeTreeGroup
+
 Public Class TypeTreeParser
     Private Shared TypeToVB As New Dictionary(Of String, String) From {{"Int", "Integer"},
             {"UInt", "UInteger"}, {"UInt8", "Byte"}, {"Bool", "Boolean"}, {"Float", "Single"},
@@ -48,7 +50,7 @@ Public Class TypeTreeParser
         Next
         Return NameReplace(FieldName) + If(IsArray, "()", String.Empty)
     End Function
-    Private Shared Function IsWeakEqualTree(Tree1 As AssetBundleFile.Asset.TypeTreeGroup.TypeTree, Tree2 As AssetBundleFile.Asset.TypeTreeGroup.TypeTree) As Boolean
+    Private Shared Function IsWeakEqualTree(Tree1 As TypeTree, Tree2 As TypeTree) As Boolean
         If Tree1.ChildCount = Tree2.ChildCount AndAlso Tree1.IsArray = Tree2.IsArray AndAlso
            Tree1.Size = Tree2.Size AndAlso Tree1.TypeName = Tree2.TypeName Then
             For i As Integer = 0 To Tree1.ChildCount - 1
@@ -66,7 +68,7 @@ Public Class TypeTreeParser
         End If
         Return TypeName.Replace("[", "").Replace("]", "").Replace("T As ", "")
     End Function
-    Private Shared Function NormalizeTypeName(TypeName As String, IsStructureIdentifier As Boolean, TypeTree? As AssetBundleFile.Asset.TypeTreeGroup.TypeTree) As String
+    Private Shared Function NormalizeTypeName(TypeName As String, IsStructureIdentifier As Boolean, TypeTree? As TypeTree) As String
         If String.IsNullOrEmpty(TypeName) Then
             Return String.Empty
         End If
@@ -123,7 +125,7 @@ Public Class TypeTreeParser
             Return NameReplace(Ori)
         End If
     End Function
-    Friend Shared Function ToVBCodes(TypeTreeGroup As IEnumerable(Of AssetBundleFile.Asset.TypeTreeGroup)) As String()
+    Friend Shared Function ToVBCodes(TypeTreeGroup As IEnumerable(Of AssetBundleFile.Asset.AssetMeta.TypeTreeGroup)) As String()
         Dim Codes(TypeTreeGroup.Count - 1) As String
         For i As Integer = 0 To Codes.Length - 1
             Codes(i) = ToVBCode(TypeTreeGroup(i).TreeRoot)
@@ -182,7 +184,7 @@ Public Class TypeTreeParser
         End If
     End Function
     Const InP = 4
-    Friend Shared Function ToVBCode(TypeTreeRoot As AssetBundleFile.Asset.TypeTreeGroup.TypeTree) As String
+    Friend Shared Function ToVBCode(TypeTreeRoot As TypeTree) As String
         Dim indent As Integer = 4
         TypeTreeRoot.TypeName = NormalizeTypeName(TypeTreeRoot.TypeName, False, TypeTreeRoot)
         Dim tpinf As New StringBuilder($"'VB代码，最低版本要求是2010，使用默认的编译选项，.net framework版本最低3.0。
@@ -196,8 +198,8 @@ Class TypeTree
 {Space(indent)}End Sub
 ")
         Dim ReadBStr As Boolean = False
-        Dim PrintChild As Action(Of AssetBundleFile.Asset.TypeTreeGroup.TypeTree, Boolean)
-        PrintChild = Sub(tree, SuppressStructureDeclare)
+        Dim PrintChild As Action(Of TypeTree, Boolean, IEnumerable(Of TypeTree))
+        PrintChild = Sub(tree, SuppressStructureDeclare, AccessableDeclaredTree)
                          With tree
                              tpinf.Append(Space(indent))
                              Dim TpName = NormalizeTypeName(.TypeName, False, tree)
@@ -217,7 +219,8 @@ Class TypeTree
                                      Dim ArrVarName As String = String.Empty
                                      Dim UsedUnknownTypeName As New List(Of String)(.ChildCount)
                                      Dim RenameTypeId As Integer = 0
-                                     Dim DeclaredTrees As New List(Of AssetBundleFile.Asset.TypeTreeGroup.TypeTree)(.ChildCount)
+                                     Dim DeclaredTrees As New List(Of TypeTree)(.ChildCount + AccessableDeclaredTree.Count)
+                                     DeclaredTrees.AddRange(AccessableDeclaredTree)
                                      For Each ch In .Child
                                          Dim CurrentFieldName = NormalizeFieldName(ch.VarName)
                                          Dim CurrentTypeName = NormalizeTypeName(ch.TypeName, False, ch)
@@ -245,7 +248,7 @@ Class TypeTree
                                              Serializer.Add(GetWriteCommand(CurrentFieldName, CurrentTypeName, "Strm", False, indent + InP * 2))
                                              Ctor.Add(CurrentFieldName + " = " + GetReadCommand(CurrentFieldName, CurrentTypeName, False, "Strm", Indent:=indent))
                                          End If
-                                         PrintChild(ch, SuppressNextTreeStructDecl)
+                                         PrintChild(ch, SuppressNextTreeStructDecl, DeclaredTrees)
                                          If CBool(.IsArray) Then
                                              Counter += 1
                                              ArrVarName = CurrentFieldName
@@ -318,7 +321,7 @@ Class TypeTree
                              End If
                          End With
                      End Sub
-        PrintChild(TypeTreeRoot, False)
+        PrintChild(TypeTreeRoot, False, {})
         If ReadBStr Then
             tpinf.Append(Space(indent)).AppendLine("Function ReadAnsiBStr(Strm As Stream) As String")
             indent += InP
@@ -352,7 +355,7 @@ Class TypeTree
             tpinf.Append(Space(indent)).AppendLine("End Function")
             indent -= InP
         End If
-        tpinf.AppendLine("End Class")
+        tpinf.Append("End Class")
         Return tpinf.ToString
     End Function
 End Class
